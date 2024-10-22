@@ -1,1 +1,10 @@
-<p>custom-tooltip works!</p>
+<div id="tooltipDiv">
+    <div [attr.class]="customTooltipClass">
+      <ng-template #simpleText>
+        {{text}}
+      </ng-template>
+      <ng-container *ngTemplateOutlet="contentTemplate || simpleText">
+      </ng-container>
+    </div>
+</div>
+  
