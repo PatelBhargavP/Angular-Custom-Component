@@ -3,11 +3,11 @@
  */
 
 
-//directives
-export * from './lib/components/custom-tooltip/custom-tooltip.directive';
+//modules
+export * from './lib/components/custom-tooltip/custom-tooltip.module';
 
-//components
-export * from './lib/components/custom-tooltip/custom-tooltip.component';
+// //components
+// export * from './lib/components/custom-tooltip/custom-tooltip.component';
 
 //services
 export * from './lib/services/bgv-custom-components.service';

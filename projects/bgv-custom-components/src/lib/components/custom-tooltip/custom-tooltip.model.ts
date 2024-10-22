@@ -1,11 +1,11 @@
-export enum RsplPositions {
+export enum TooltipPositions {
     top = 'top',
     bottom = 'bottom',
     left = 'left',
     right = 'right'
 }
 
-export enum RsplDirections {
+export enum TooltipDirections {
     start = 'start',
     center = 'center',
     end = 'end',

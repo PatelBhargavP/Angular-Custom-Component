@@ -1,7 +1,5 @@
 
-import { CommonModule } from '@angular/common';
-import { OverlayModule } from '@angular/cdk/overlay';
-import { PortalModule } from '@angular/cdk/portal';
+import { DOCUMENT } from '@angular/common';
 import {
   Directive,
   Input,
@@ -14,7 +12,9 @@ import {
   EventEmitter,
   Output,
   ChangeDetectorRef,
-  Renderer2
+  Renderer2,
+  inject,
+  Inject
 } from '@angular/core';
 import {
   ConnectedPosition,
@@ -28,20 +28,20 @@ import {
   VerticalConnectionPos
 } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
-import { CustomTooltipComponent } from './custom-tooltip.component.ts';
+import { CustomTooltipComponent } from './custom-tooltip.component';
 import { Directionality } from '@angular/cdk/bidi';
-import { RsplDirections, RsplPositions } from './custom-tooltip.model.ts';
+import { TooltipDirections, TooltipPositions } from './custom-tooltip.model';
 import { Subscription, take, tap } from 'rxjs';
 
 @Directive({
   selector: '[bgvCustomTooltip]',
-  imports: [
-    CommonModule, 
-    OverlayModule,
-    PortalModule,
-    CustomTooltipComponent
-  ],
-  standalone: true
+  // imports: [
+  //   CommonModule, 
+  //   OverlayModule,
+  //   PortalModule,
+  //   CustomTooltipComponent
+  // ],
+  // standalone: true
 })
 export class CustomTooltipDirective  implements OnInit, OnDestroy {
   /**
@@ -54,9 +54,9 @@ export class CustomTooltipDirective  implements OnInit, OnDestroy {
    * @memberof CustomToolTipDirective
    * @type {string | undefined}
    * If this is specified then specified text will be showin in the tooltip.
-   * From HTML we can pass this value as <html-element [rsplCustomToolTip]="'your tooltip message'"></html-element>
+   * From HTML we can pass this value as <html-element [bgvCustomTooltip]="'your tooltip message'"></html-element>
   */
-  @Input(`rsplCustomToolTip`) text: string | undefined;
+  @Input(`bgvCustomTooltip`) text: string | undefined;
 
   /**
    * @memberof CustomToolTipDirective
@@ -81,10 +81,10 @@ export class CustomTooltipDirective  implements OnInit, OnDestroy {
 
   /**
    *  @memberof CustomToolTipDirective
-   *  @type {RsplDirections}
+   *  @type {TooltipDirections}
    *  this indicates preffered position of the tooltip.
   */
-  @Input() position: string = RsplDirections.below;
+  @Input() position: string = TooltipDirections.below;
 
   /**
    *  @memberof CustomToolTipDirective
@@ -106,9 +106,10 @@ export class CustomTooltipDirective  implements OnInit, OnDestroy {
   *
   *  To render tooltip in ag-grid
  */
-  @Output() toolTipCreated = new EventEmitter<ComponentRef<RsplToolTipComponent>>();
+  @Output() toolTipCreated = new EventEmitter<ComponentRef<CustomTooltipComponent>>();
 
 
+  // private document = DOCUMENT;
   private _overlayRef: OverlayRef | undefined;
 
   isTooltipRendered = false;
@@ -125,7 +126,8 @@ export class CustomTooltipDirective  implements OnInit, OnDestroy {
     private _overlayPositionBuilder: OverlayPositionBuilder,
     private _elementRef: ElementRef,
     private zone: NgZone,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    @Inject(DOCUMENT) private document: Document
   ) { }
 
   /**
@@ -144,7 +146,12 @@ export class CustomTooltipDirective  implements OnInit, OnDestroy {
 
     this.tooltipElement = this.renderer.createElement('span');
     this.renderer.setAttribute(this.tooltipElement, 'id', this.tooltipId);
-    this.renderer.setAttribute(this.tooltipElement, 'class', 'custom-text-tooltip chip-bg br-xs p-1 color-white position-absolute d-block');
+    this.renderer.setStyle(this.tooltipElement, 'position', 'absolute');
+    this.renderer.setStyle(this.tooltipElement, 'background-color', '#626262');
+    this.renderer.setStyle(this.tooltipElement, 'color', 'white');
+    this.renderer.setStyle(this.tooltipElement, 'border-radius', '5px');
+    this.renderer.setStyle(this.tooltipElement, 'padding', '5px');
+    this.renderer.setAttribute(this.tooltipElement, 'class', 'custom-text-tooltip');
 
     this.renderer.appendChild(
       this.tooltipElement,
@@ -194,7 +201,7 @@ export class CustomTooltipDirective  implements OnInit, OnDestroy {
   }
   private removeExistingTooltips(id: string): void {
     // remove existing tooltip if any
-    const existingTooltip = document.getElementById(id);
+    const existingTooltip = this.document.getElementById(id);
     if (existingTooltip && existingTooltip.parentNode) {
       existingTooltip.parentNode.removeChild(existingTooltip);
     }
@@ -246,16 +253,16 @@ export class CustomTooltipDirective  implements OnInit, OnDestroy {
       const positionStrategy = this._overlayPositionBuilder
         .flexibleConnectedTo(this._elementRef)
         .withPositions([{
-          originX: RsplDirections.center,
-          originY: RsplPositions.bottom,
-          overlayX: RsplDirections.center,
-          overlayY: RsplPositions.top
+          originX: TooltipDirections.center,
+          originY: TooltipPositions.bottom,
+          overlayX: TooltipDirections.center,
+          overlayY: TooltipPositions.top
         }]);
       this._overlayRef = this._overlay.create({ positionStrategy });
     }
     //attach the component if it has not already attached to the overlay
     if (!this.isTooltipRendered && this._overlayRef) {
-      const tooltipRef: ComponentRef<RsplToolTipComponent> = this._overlayRef.attach(new ComponentPortal(RsplToolTipComponent));
+      const tooltipRef: ComponentRef<CustomTooltipComponent> = this._overlayRef.attach(new ComponentPortal(CustomTooltipComponent));
       if (this.customTooltipClass) {
         tooltipRef.instance.customTooltipClass = this.customTooltipClass;
       }
@@ -287,19 +294,19 @@ export class CustomTooltipDirective  implements OnInit, OnDestroy {
 
   /**
    * Returns the origin position and a fallback position based on the user's position preference.
-   * The fallback position is the inverse of the origin (e.g. `RsplPositions.below -> above`).
+   * The fallback position is the inverse of the origin (e.g. `TooltipPositions.below -> above`).
    */
   getOrigin(): { main: OriginConnectionPosition; fallback: OriginConnectionPosition } {
-    const isLtr = !this._dir || this._dir.value === RsplDirections.ltr;
+    const isLtr = !this._dir || this._dir.value === TooltipDirections.ltr;
     const position = this.position;
     let originPosition: OriginConnectionPosition;
 
-    if (position === RsplDirections.above || position === RsplDirections.below) {
-      originPosition = { originX: RsplDirections.center, originY: position === RsplDirections.above ? RsplPositions.top : RsplPositions.bottom };
-    } else if (position === RsplDirections.before || (position === RsplPositions.left && isLtr) || (position === RsplPositions.right && !isLtr)) {
-      originPosition = { originX: RsplDirections.start, originY: RsplDirections.center };
-    } else if (position === RsplDirections.after || (position === RsplPositions.right && isLtr) || (position === RsplPositions.left && !isLtr)) {
-      originPosition = { originX: RsplDirections.end, originY: RsplDirections.center };
+    if (position === TooltipDirections.above || position === TooltipDirections.below) {
+      originPosition = { originX: TooltipDirections.center, originY: position === TooltipDirections.above ? TooltipPositions.top : TooltipPositions.bottom };
+    } else if (position === TooltipDirections.before || (position === TooltipPositions.left && isLtr) || (position === TooltipPositions.right && !isLtr)) {
+      originPosition = { originX: TooltipDirections.start, originY: TooltipDirections.center };
+    } else if (position === TooltipDirections.after || (position === TooltipPositions.right && isLtr) || (position === TooltipPositions.left && !isLtr)) {
+      originPosition = { originX: TooltipDirections.end, originY: TooltipDirections.center };
     }
 
     /** based on the origing position we decide the fallback position.
@@ -317,16 +324,16 @@ export class CustomTooltipDirective  implements OnInit, OnDestroy {
     position.positionChanges.pipe(
       take(1),
       tap((x) => {
-        if (x.connectionPair.originY == RsplPositions.bottom) {
+        if (x.connectionPair.originY == TooltipPositions.bottom) {
           // we add space on the top of tooltip
           position.withDefaultOffsetY(this.offset);
-        } else if (x.connectionPair.originY === RsplPositions.top) {
+        } else if (x.connectionPair.originY === TooltipPositions.top) {
           // we add space on the bottom of tooltip
           position.withDefaultOffsetY(-1 * this.offset);
-        } else if (x.connectionPair.originX === RsplDirections.end) {
+        } else if (x.connectionPair.originX === TooltipDirections.end) {
           //  we add space on the left of tooltip
           position.withDefaultOffsetX(this.offset);
-        } else if (x.connectionPair.originX === RsplDirections.start) {
+        } else if (x.connectionPair.originX === TooltipDirections.start) {
           //  we add space on the left of tooltip
           position.withDefaultOffsetX(-1 * this.offset);
         }
@@ -339,17 +346,17 @@ export class CustomTooltipDirective  implements OnInit, OnDestroy {
 
   /** Inverts an overlay position. */
   private invertPosition(x: HorizontalConnectionPos, y: VerticalConnectionPos) {
-    if (this.position === RsplDirections.above || this.position === RsplDirections.below) {
-      if (y === RsplPositions.top) {
-        y = RsplPositions.bottom;
-      } else if (y === RsplPositions.bottom) {
-        y = RsplPositions.top;
+    if (this.position === TooltipDirections.above || this.position === TooltipDirections.below) {
+      if (y === TooltipPositions.top) {
+        y = TooltipPositions.bottom;
+      } else if (y === TooltipPositions.bottom) {
+        y = TooltipPositions.top;
       }
     } else {
-      if (x === RsplDirections.end) {
-        x = RsplDirections.start;
-      } else if (x === RsplDirections.start) {
-        x = RsplDirections.end;
+      if (x === TooltipDirections.end) {
+        x = TooltipDirections.start;
+      } else if (x === TooltipDirections.start) {
+        x = TooltipDirections.end;
       }
     }
     return { x, y };
@@ -362,15 +369,15 @@ export class CustomTooltipDirective  implements OnInit, OnDestroy {
 
   /** Returns the overlay position and a fallback position based on the user's preference */
   getOverlayPosition(): { main: OverlayConnectionPosition; fallback: OverlayConnectionPosition } {
-    const isLtr = !this._dir || this._dir.value === RsplDirections.ltr;
+    const isLtr = !this._dir || this._dir.value === TooltipDirections.ltr;
     const position = this.position;
     let overlayPosition: OverlayConnectionPosition;
-    if (position === RsplDirections.above || position === RsplDirections.below) {
-      overlayPosition = { overlayX: RsplDirections.center, overlayY: position === RsplDirections.above ? RsplPositions.bottom : RsplPositions.top };
-    } else if (position === RsplDirections.before || (position === RsplPositions.left && isLtr) || (position === RsplPositions.right && !isLtr)) {
-      overlayPosition = { overlayX: RsplDirections.end, overlayY: RsplDirections.center };
-    } else if (position === RsplDirections.after || (position === RsplPositions.right && isLtr) || (position === RsplPositions.left && !isLtr)) {
-      overlayPosition = { overlayX: RsplDirections.start, overlayY: RsplDirections.center };
+    if (position === TooltipDirections.above || position === TooltipDirections.below) {
+      overlayPosition = { overlayX: TooltipDirections.center, overlayY: position === TooltipDirections.above ? TooltipPositions.bottom : TooltipPositions.top };
+    } else if (position === TooltipDirections.before || (position === TooltipPositions.left && isLtr) || (position === TooltipPositions.right && !isLtr)) {
+      overlayPosition = { overlayX: TooltipDirections.end, overlayY: TooltipDirections.center };
+    } else if (position === TooltipDirections.after || (position === TooltipPositions.right && isLtr) || (position === TooltipPositions.left && !isLtr)) {
+      overlayPosition = { overlayX: TooltipDirections.start, overlayY: TooltipDirections.center };
     }
     const { x, y } = this.invertPosition(overlayPosition!.overlayX, overlayPosition!.overlayY);
     return {
@@ -387,7 +394,7 @@ export class CustomTooltipDirective  implements OnInit, OnDestroy {
   hide() {
     if (this.tooltipElement) {
       // hide tooltip created by div element
-      this.renderer.addClass(this.tooltipElement, 'd-none');
+      this.removeExistingTooltips(this.tooltipId);
     }
     this.wheelSubscription?.unsubscribe();
     this.leaveSubscription?.unsubscribe();

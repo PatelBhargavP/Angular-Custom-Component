@@ -1,11 +1,16 @@
 <main class="main">
   <div class="content">
 
-    <h1>Hello, {{ title }}</h1>
+    <h1>Welcomt to {{ title }}</h1>
     <p>Congratulations! Your app is running. 🎉 you can try out the library components below</p>
 
     <h3>Custom tooltip</h3>
-    <bgv-custom-tooltip></bgv-custom-tooltip>
+    <p [bgvCustomTooltip]="'Custom tooltip text'">This is a sample text that generates tooltip as "Custom tooltip text"</p>
+    <p bgvCustomTooltip [contentTemplate]="customTemplate">This is a sample text that generates custom template as tooltip </p>
+    <ng-template #customTemplate>
+      This is custom template
+    </ng-template>
+    <!-- <bgv-custom-tooltip></bgv-custom-tooltip> -->
   </div>
 </main>
 <router-outlet />

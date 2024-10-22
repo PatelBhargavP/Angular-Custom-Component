@@ -1,9 +1,10 @@
+import { CommonModule, NgComponentOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input, TemplateRef } from '@angular/core';
 
 @Component({
   selector: 'bgv-custom-tooltip',
-  standalone: true,
-  imports: [],
+  // standalone: true,
+  // imports: [CommonModule, NgComponentOutlet],
   templateUrl: './custom-tooltip.component.html',
   styleUrl: './custom-tooltip.component.css'
 })
